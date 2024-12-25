@@ -3,7 +3,7 @@ import { bcs } from "@mysten/bcs";
 import { CoinStruct, getFullnodeUrl, SuiClient } from "@mysten/sui/client";
 import {useCurrentAccount,useSignAndExecuteTransaction,useSuiClient} from "@mysten/dapp-kit";
 import DEPLOYED_OBJECTS from "../../../src/components/constants/deployed_objects.json";
-import { SUI_TYPE_ARG } from "@mysten/sui/utils";
+import { SUI_TYPE_ARG,SUI_CLOCK_OBJECT_ID } from "@mysten/sui/utils";
 import { useEffect, useState } from "react";
 
 export const useNewBetCreation = () => {
@@ -80,6 +80,7 @@ export const useNewBetCreation = () => {
              tx.object(bet_id), // BetService ID
              tx.pure(bcs.string().serialize(choice)),
              tx.object(splitCoin), // Bet amount as u64
+             tx.object(SUI_CLOCK_OBJECT_ID)
            ],
          });
 

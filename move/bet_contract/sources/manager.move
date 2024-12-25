@@ -38,10 +38,10 @@ module bet_contract::manager{
         transfer::transfer(bet_manager, tx_context::sender(ctx));
     }
 
-    public fun add_bet(manager: &mut BetManager,home:String,away:String,result:String,ctx:&mut TxContext){
+    public fun add_bet(manager: &mut BetManager,home:String,away:String,result:String,start_time:u64,ctx:&mut TxContext){
         let fee =manager.fee_percentage;
 
-       let bet_id= service::create_bet_service(home,away,result,fee,ctx);
+       let bet_id= service::create_bet_service(home,away,result,fee,start_time,ctx);
 
        register_bet_with_manager(manager,bet_id)
     

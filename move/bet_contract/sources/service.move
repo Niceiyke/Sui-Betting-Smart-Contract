@@ -1,22 +1,25 @@
 module bet_contract::service{
     use sui::balance::{Self,Balance};
-    use sui::object_table::{Self, ObjectTable};
     use sui::dynamic_field as df;
     use sui::coin::{Self,Coin};
     use sui::sui::SUI;
+    use sui::clock::Clock;
     use std::string::String;
-    use bet_contract:: bet:: {Self,Bet};
+    use bet_contract:: bet:: {Self,BetRecipt};
     
 
 
-    //const ERROR_NOT_FOUND:u64 =1;
+    const ERROR_BET_NOT_RESOLVED:u64 =1;
     const ERROR_NOT_BET_OWNER:u64 =2;
     const ERROR_INVALID_CHOICE:u64 =3;
+    const ERROR_ALREADY_CLAIMED_WINNING:u64 =4;
+    const ERROR_MATCH_ALREADY_STARTED:u64 =5;
 
     public enum BetStatus has store,drop,copy{
         Pending,
         Resolved,
         Canceled,
+        Finalized,
     }
 
     public struct BetService has key, store {
@@ -30,7 +33,9 @@ module bet_contract::service{
         total_winning_pot:u64,
         total_lossing_pot:u64,
         manager_tax_fee:u64,
-        bet_count:u64
+        bet_count:u64,
+        start_time:u64
+
         
     }
 
@@ -39,7 +44,7 @@ module bet_contract::service{
         bet_id:ID
     }
     #[allow(lint(self_transfer))]
-    public (package) fun create_bet_service(home:String,away:String,result:String,fee:u64,ctx:&mut TxContext,):ID{
+    public (package) fun create_bet_service(home:String,away:String,result:String,fee:u64,start_time:u64,ctx:&mut TxContext,):ID{
         
         let new_bet_uid =object::new(ctx);
         let new_bet_id =object::uid_to_inner(&new_bet_uid);
@@ -55,7 +60,9 @@ module bet_contract::service{
             total_winning_pot:0,
             total_lossing_pot:0,
             manager_tax_fee:fee,
-            bet_count:0
+            bet_count:0,
+            start_time,
+
             
         };
 
@@ -71,8 +78,13 @@ module bet_contract::service{
           new_bet_id
     }
 
-    public fun place_new_bet(bet:&mut BetService,choice: String,mut amount:Coin<SUI>,ctx:&mut TxContext):ID{
+    public fun place_new_bet(bet:&mut BetService,choice: String,mut amount:Coin<SUI>,clock:&Clock,ctx:&mut TxContext):ID{
+        let current_time = clock.timestamp_ms();
+        
+        assert!(bet.start_time> current_time,ERROR_MATCH_ALREADY_STARTED);
+
       let bet_id =object::uid_to_inner(&bet.id);
+
       
       let amount_value =coin::value(&amount);
       let fee = (amount_value / 100)* bet.manager_tax_fee;
@@ -119,20 +131,49 @@ module bet_contract::service{
         bet.total_lossing_pot =bet_pot-winning
 
     }
+
+
     #[allow(lint(self_transfer))]
-    public fun claim_winning(service:&mut BetService,bet:&Bet,ctx:&mut TxContext){
+    public fun claim_winning(service:&mut BetService,bet:&mut BetRecipt,ctx:&mut TxContext){
+
+        assert!(service.status ==BetStatus::Resolved,ERROR_BET_NOT_RESOLVED);
         let claimer =tx_context::sender(ctx);
         let result =service.result;
-        let (bet_id,bet_amount,choice,owner)=bet::get_bet_info(bet);
-        let total_pot =balance::value(&service.pot_balance);
+        
+        let (bet_id,bet_amount,choice,owner,claimed)=bet::get_bet_info(bet);
+        
         assert!(bet_id == service.id.to_inner());
         assert!(owner == claimer,ERROR_NOT_BET_OWNER);
         assert!(choice == result,ERROR_INVALID_CHOICE);
+        assert!(claimed ==false, ERROR_ALREADY_CLAIMED_WINNING);
+
+        let total_pot =balance::value(&service.pot_balance);
+
+  
 
         let share = (bet_amount * total_pot) /service.total_winning_pot;
 
         let winnings = coin::take(&mut service.pot_balance, share, ctx);
-        transfer::public_transfer(winnings, claimer);
+
+        let claimed =bet::update_recipt_claim(bet);
+
+        
+
+        if(claimed){
+
+            
+
+            if(balance::value(&service.pot_balance) == 0){
+            service.status=BetStatus::Finalized
+        };
+
+            transfer::public_transfer(winnings, claimer);
+            
+        }
+        else{
+            abort
+        }
+        
 
 
 

@@ -10,10 +10,21 @@ import ActiveMatchList from "./components/manager/ActiveBets";
 import ActiveMatchDetail from "./components/manager/UpdateBets";
 import ResolvedMatchDetail from "./components/match/ResolvedMatchDetail";
 import ResolvedMatchList from "./components/user/ClaimWinning";
-import { useGetUserResolvedBets } from "./components/hooks/useGetUserResolvedBets";
 
 export default function App() {
   const { matchList, isLoading } = useGetBetServices(); // Get matches
+
+  const time =Date.now()
+
+
+  const activeMatches = matchList.filter((match) => match.status == "Pending" && Number(match.start_time) > time);
+
+  //change logic to be greater than minutes of match play
+  const updateResultList = matchList.filter(
+    (match) => match.status == "Pending" && Number(match.start_time) < time
+  );
+
+
 
 
 
@@ -43,7 +54,7 @@ export default function App() {
 
   const UpdateMatchDetailWrapper: React.FC = () => {
     const { id } = useParams(); // Match ID from URL
-    const match = matchList.find((m) => m.id === id); // Find match by ID
+    const match = updateResultList.find((m) => m.id === id); // Find match by ID
 
     if (!match) {
       return <p className="text-red-500 text-center mt-4">Match not found.</p>;
@@ -75,7 +86,7 @@ export default function App() {
             isLoading ? (
               <p className="text-center mt-4">Loading matches...</p>
             ) : (
-              <MatchList matchList={matchList} />
+              <MatchList matchList={activeMatches} />
             )
           }
         />
@@ -85,7 +96,7 @@ export default function App() {
             isLoading ? (
               <p className="text-center mt-4">Loading matches...</p>
             ) : (
-              <ActiveMatchList matchList={matchList} />
+              <ActiveMatchList matchList={updateResultList} />
             )
           }
         />

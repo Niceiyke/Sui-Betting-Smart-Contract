@@ -24,6 +24,7 @@ module bet_contract::bet{
         bet_service_id:ID,
         choice: String,
         amount:u64,
+        claimed:bool
    
 
 
@@ -45,7 +46,8 @@ module bet_contract::bet{
             owner:tx_context::sender(ctx),
             bet_service_id,
             choice,
-            amount
+            amount,
+            claimed:false
         };
         
         transfer::public_transfer(recipt,tx_context::sender(ctx));
@@ -75,12 +77,25 @@ module bet_contract::bet{
 
     }
 
-    public (package) fun get_bet_info(bet:&Bet):(ID,u64,String,address){
+    public(package) fun update_recipt_claim(recipt:&mut BetRecipt):bool{
+
+        recipt.claimed =true;
+        true
+    }
+
+    public(package) fun delete_recipt(recipt: BetRecipt):bool{
+
+        let BetRecipt{id,owner:_,bet_service_id:_,choice:_,amount:_,claimed:_}=recipt;
+        object::delete(id);
+        true
+    }
+
+    public (package) fun get_bet_info(bet:&BetRecipt):(ID,u64,String,address,bool){
         let bet_id=bet.bet_service_id;
         let bet_amount= bet.amount;
         let choice =bet.choice;
         let owner =bet.owner;
-
-        (bet_id,bet_amount,choice,owner)
+        let claimed =bet.claimed;
+        (bet_id,bet_amount,choice,owner,claimed)
     }
 }

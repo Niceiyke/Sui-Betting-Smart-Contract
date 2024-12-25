@@ -80,7 +80,7 @@ console.log(`spent ${Math.abs(parse_amount(balanceChanges[0].amount))} sui on de
 const published_change = objectChanges?.find(change => change.type == "published")
 const bet_manager_id = objectChanges
   ?.filter((change) => change.type == "created")
-  ?.filter((obj) => !obj.objectType.includes("::BetManagerOwner"))[0];
+  ?.filter((obj) => obj.objectType.includes("::BetManager")&&!obj.objectType.includes("::BetManagerOwner"))[0];
 const bet_manager_cap = objectChanges
   ?.filter((change) => change.type == "created")
   ?.filter((obj) => obj.objectType.includes("::BetManagerOwner"))[0];

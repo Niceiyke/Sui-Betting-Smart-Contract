@@ -52,59 +52,44 @@ export const useClaimWinning = () => {
     }
   }, [account]);
 
-  const claimWinning = async (bet_id: string) => {
-   const  recipt=recipts.filter((c) => {
-      c.data?.content?.fields?.bet_service_id == bet_id;
-     
-    });
-    console.log(recipt);
-     setBetRecipt(recipt[0]?.data.objectId);
+const claimWinning = async (bet_id: string) => {
+  try {
+    if (!account) throw new Error("Wallet not connected");
+
+    const recipt = recipts.find(
+      (c) => c.data?.content?.fields?.bet_service_id === bet_id
+    );
+    if (!recipt) throw new Error("You have no winning to claim");
+   console.log(recipt.data?.objectId)
+    
+
     const tx = new Transaction();
-    try {
-      if (!account) throw new Error("Wallet not connected");
-      console.log(betRecipts)
+    tx.moveCall({
+      target: `${DEPLOYED_OBJECTS.PACKAGE_ID}::service::claim_winning`,
+      arguments: [tx.object(bet_id), tx.object(recipt?.data.objectId)],
+    });
 
-      if(!betRecipts) throw new Error("You have no winning to claim");
-      
-
-      const betrecipt:string =betRecipts
-
-      // Create the Move call
-      tx.moveCall({
-        target: `${DEPLOYED_OBJECTS.PACKAGE_ID}::service::claim_winning`,
-        arguments: [
-          tx.object(bet_id), // BetService ID
-          tx.object(betrecipt), // recipt ID
-        ],
-      });
-
-      // Sign and execute the transaction
-      signAndExecute(
-        { transaction: tx },
-
-        {
-          onSuccess: async ({ digest }) => {
-            const { effects, objectChanges } =
-              await suiClient.waitForTransaction({
-                digest,
-                options: {
-                  showEffects: true,
-                  showObjectChanges: true,
-                },
-              });
-
-            console.log("Transaction successful!", effects, objectChanges);
-            return effects?.created[0]?.reference.objectId;
-          },
-          onError: (error) => {
-            console.error("Transaction failed", error);
-          },
-        }
-      );
-    } catch (error) {
-      console.error("Error placing new bet:", error);
-    }
-  };
+ signAndExecute(
+      { transaction: tx },
+      {
+        onSuccess: async ({ digest }) => {
+          const { effects, objectChanges } = await suiClient.waitForTransaction(
+            {
+              digest,
+              options: { showEffects: true, showObjectChanges: true },
+            }
+          );
+          console.log("Transaction successful!", effects, objectChanges);
+        },
+        onError: (error) => {
+          console.error("Transaction failed", error);
+        },
+      }
+    );
+  } catch (error) {
+    console.error("Error claiming winnings:", error);
+  }
+};
 
   return {
     isSuccess,

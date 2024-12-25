@@ -5,7 +5,14 @@ import DEPLOYED_OBJECTS from "../../../src/components/constants/deployed_objects
 
 export const useGetBetServices = () => {
   const [matchList, setMatchList] = useState<
-    { id: string; home: string; away: string,status:string,result:[number] }[]
+    {
+      id: string;
+      home: string;
+      away: string;
+      status: string;
+      result: [number];
+      start_time:string;
+    }[]
   >([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
@@ -54,7 +61,8 @@ const getBets = async () => {
           home: fields.home,
           away: fields.away,
           status:fields.status.variant,
-          result:fields.result
+          result:fields.result,
+          start_time:fields.start_time
           
         };
       })

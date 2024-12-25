@@ -31,10 +31,16 @@ const Navbar = () => {
                 New Event
               </Link>
               <Link
-                to="#"
-                className="hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium"
+                to="/active"
+                className="hover:bg-blue-700 block px-3 py-2 rounded-md text-base font-medium"
               >
-                Services
+                Update Result
+              </Link>
+              <Link
+                to="/resolved"
+                className="hover:bg-blue-700 block px-3 py-2 rounded-md text-base font-medium"
+              >
+                claim Winning
               </Link>
               <a
                 href="#"
@@ -94,10 +100,16 @@ const Navbar = () => {
               New Event
             </Link>
             <Link
-              to="#"
+              to="/active"
               className="hover:bg-blue-700 block px-3 py-2 rounded-md text-base font-medium"
             >
-              Services
+              Update Result
+            </Link>
+            <Link
+              to="/resolved"
+              className="hover:bg-blue-700 block px-3 py-2 rounded-md text-base font-medium"
+            >
+              claim Winning
             </Link>
             <Link
               to="#"

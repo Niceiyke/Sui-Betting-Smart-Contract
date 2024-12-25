@@ -14,7 +14,7 @@ export const useBetServiceCreation =()=>{
 
 
 
-const createNewService = async (home: string, away: string) => {
+const createNewService = async (home: string, away: string,start_time:number) => {
   const tx = new Transaction();
 
   const result:string =''
@@ -26,6 +26,7 @@ const createNewService = async (home: string, away: string) => {
       tx.pure(bcs.string().serialize(home)),
       tx.pure(bcs.string().serialize(away)),
       tx.pure(bcs.string().serialize(result)),
+      tx.pure.u64(start_time)
     ],
   });
 

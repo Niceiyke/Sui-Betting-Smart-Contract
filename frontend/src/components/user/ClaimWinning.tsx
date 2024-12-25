@@ -7,8 +7,8 @@ interface Match {
   id: string;
   home: string;
   away: string;
-  status:string;
-  result:[number]
+  status: string;
+  result: [number];
 }
 
 interface MatchListProps {
@@ -16,23 +16,19 @@ interface MatchListProps {
 }
 
 const ResolvedMatchList: React.FC<MatchListProps> = ({ matchList }) => {
-  const navigate = useNavigate();
-  const { claimWinning } = useClaimWinning();
-  const {matchList:list_bets}= useGetUserResolvedBets(matchList[1]?.id)
 
-  console.log(list_bets)
-  
+  const { claimWinning } = useClaimWinning();
+  const { matchList: list_bets } = useGetUserResolvedBets(matchList[1]?.id);
 
   const handleNavigate = (id: string) => {
-    
     //navigate(`/resolved/match/${id}`); // Navigate to match detail page
-    claimWinning(id)
+    claimWinning(id);
   };
 
   return (
     <div className="max-w-md mx-auto p-4 bg-gray-100 shadow-lg rounded-lg">
       <h1 className="text-2xl font-bold text-center text-blue-600 mb-4">
-        Upcoming Matches
+        Awaiting Claims
       </h1>
       <ul className="space-y-4">
         {matchList.map((match) => (

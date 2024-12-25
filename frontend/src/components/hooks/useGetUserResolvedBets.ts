@@ -3,27 +3,27 @@ import { SuiClient, getFullnodeUrl } from "@mysten/sui/client";
 import { SuiMoveObject } from "@mysten/sui/client";
 import { useCurrentAccount } from "@mysten/dapp-kit";
 
+interface BetRecipt {
+  id: string;
+  owner: string;
+  choice: string;
+  bet_id: string;
+  amount: string;
+}
 
-export const useGetUserResolvedBets = (id) => {
+
+export const useGetUserResolvedBets = (id: string) => {
   const account = useCurrentAccount();
-    const [matchList, setMatchList] = useState<
-    {
-      id: string;
-      owner: string;
-      choice: string;
-      bet_id: string;
-      amount: string;
-    }[]
-  >([]);
+  const [matchList, setMatchList] = useState<BetRecipt[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
 
-  const fetchAllBets = async (id:string) => {
+  const fetchAllBets = async () => {
+    if (!account?.address) return;
     setIsLoading(true);
     setIsError(false);
     try {
-      const bets = await getBets(id,account?.address);
-      console.log(bets)
+      const bets = await getBets(id, account.address);
       setMatchList(bets);
     } catch (error) {
       console.error("Error fetching bets:", error);
@@ -33,13 +33,13 @@ export const useGetUserResolvedBets = (id) => {
     }
   };
 
-  useEffect(()=>{
-    fetchAllBets(id)
-  },[])
+  useEffect(() => {
+    fetchAllBets();
+  }, [id, account?.address]);
 
-
-  return { matchList, isLoading, isError,fetchAllBets };
+  return { matchList, isLoading, isError, fetchAllBets };
 };
+
 
 const getBets = async (bet_id:string,owner:string|undefined) => {
   const client = new SuiClient({
