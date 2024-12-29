@@ -1,14 +1,13 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
 import { useClaimWinning } from "../hooks/useClaimWinning";
-import { useGetUserResolvedBets } from "../hooks/useGetUserResolvedBets";
 
 interface Match {
   id: string;
   home: string;
   away: string;
   status: string;
-  result: [number];
+  result: string;
+  startTime: string;
 }
 
 interface MatchListProps {
@@ -18,7 +17,6 @@ interface MatchListProps {
 const ResolvedMatchList: React.FC<MatchListProps> = ({ matchList }) => {
 
   const { claimWinning } = useClaimWinning();
-  const { matchList: list_bets } = useGetUserResolvedBets(matchList[1]?.id);
 
   const handleNavigate = (id: string) => {
     //navigate(`/resolved/match/${id}`); // Navigate to match detail page

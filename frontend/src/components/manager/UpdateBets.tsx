@@ -1,11 +1,6 @@
 import React, { useState } from "react";
 import { useUpdateBet } from "../hooks/useUpdateBet";
-
-interface Match {
-  id: string;
-  home: string;
-  away: string;
-}
+import { Match } from "../../types";
 
 interface MatchDetailProps {
   match: Match;
@@ -13,18 +8,21 @@ interface MatchDetailProps {
 }
 
 const ActiveMatchDetail: React.FC<MatchDetailProps> = ({ match, onBack }) => {
-  const [result, setResult] = useState<"Home" | "Away" | "Draw">("Home");
-  const { updateBet } = useUpdateBet(match.id, result);
+  const [result, setResult] = useState<"Home" | "Away" | "Draw" | "">("");
+  console.log("updatebet", match.id);
+  const { updateBet } = useUpdateBet({ betId: match.id, result });
 
   const onUpdateBet = async () => {
-    await updateBet();
+    try {
+      await updateBet();
+    } catch (error) {
+      console.error("Error updating bet:", error);
+    }
   };
 
-  const handleResultChange = (result: "Home" | "Away" | "Draw") => {
-    setResult(result);
+  const handleResultChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setResult(event.target.value as "Home" | "Away" | "Draw" | "");
   };
-
-
 
   return (
     <div className="max-w-md mx-auto p-4 bg-gray-100 shadow-lg rounded-lg">
@@ -51,7 +49,7 @@ const ActiveMatchDetail: React.FC<MatchDetailProps> = ({ match, onBack }) => {
             <select
               className="w-full border rounded-md px-3 py-2"
               value={result || ""}
-              onChange={(e) => handleResultChange(e.target.value)}
+              onChange={handleResultChange}
             >
               <option value="">Select</option>
               <option value={match.home}>{match.home}</option>
@@ -59,9 +57,11 @@ const ActiveMatchDetail: React.FC<MatchDetailProps> = ({ match, onBack }) => {
               <option value="Draw">Draw</option>
             </select>
           </div>
-
-          <button onClick={onUpdateBet} className="bg-green-500 rounded-md p-4">
-            update Bet
+          <button
+            onClick={onUpdateBet}
+            className="bg-green-500 text-white rounded-md p-4 hover:bg-green-600 transition-colors"
+          >
+            Update Bet
           </button>
         </div>
       </div>

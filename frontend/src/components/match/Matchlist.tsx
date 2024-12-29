@@ -1,11 +1,8 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { Match } from "../../types";
 
-interface Match {
-  id: string;
-  home: string;
-  away: string;
-}
+
 
 interface MatchListProps {
   matchList: Match[]; // Updated type

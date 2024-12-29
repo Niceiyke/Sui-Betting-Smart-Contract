@@ -1,76 +1,132 @@
 import { Transaction } from "@mysten/sui/transactions";
-import {  getFullnodeUrl, SuiClient, SuiObjectResponse } from "@mysten/sui/client";
+import {
+  getFullnodeUrl,
+  SuiClient,
+  SuiObjectResponse,
+} from "@mysten/sui/client";
 import DEPLOYED_OBJECTS from "../../../src/components/constants/deployed_objects.json";
 import {
   useCurrentAccount,
   useSignAndExecuteTransaction,
   useSuiClient,
 } from "@mysten/dapp-kit";
-
 import { useEffect, useState } from "react";
 
+interface BetReceipt {
+  betServiceId: string;
+  objectId: string;
+}
+
 export const useClaimWinning = () => {
-  const [recipts, setRecipt] = useState<SuiObjectResponse[]>([]);
-  const [betRecipts, setBetRecipt] = useState<string>();
-  
+  const [receipts, setReceipts] = useState<SuiObjectResponse[]>([]);
+  const [betResult,setBetResult]=useState<string>('')
   const suiClient = useSuiClient();
+  const [betId,setBetID]=useState('')
   const {
-    mutate: signAndExecute,
+    mutate: signAndExecuteTransaction,
     isSuccess,
     isPending,
   } = useSignAndExecuteTransaction();
   const account = useCurrentAccount();
 
-  const client = new SuiClient({
-    url: getFullnodeUrl("testnet"),
-  });
+  const suiClientInstance = new SuiClient({ url: getFullnodeUrl("testnet") });
 
-  const fetchCoins = async (address: string) => {
+  useEffect(() => {
+    if (account?.address) {
+      fetchReceipts(account.address);
+      fetchBetResult(betId)
+    }
+  }, [betId]);
+
+  const fetchBetResult = async (betId: string): Promise<void> => {
     try {
-      const response = await client.getOwnedObjects({
+      const response = await suiClientInstance.getObject({
+        id: betId,
+        options: {
+          showType: true,
+          showContent: true,
+        },
+      });
+      setBetResult(response.data?.content?.fields.result);
+    } catch (error) {
+      console.error("Error fetching receipts:", error);
+      setReceipts([]);
+    }
+  };
+
+  const fetchReceipts = async (address: string): Promise<void> => {
+    console.log("called",address)
+    try {
+      const response = await suiClientInstance.getOwnedObjects({
         owner: address,
         filter: {
-          StructType: `${DEPLOYED_OBJECTS.PACKAGE_ID}::bet::BetRecipt`,
+          StructType: `${DEPLOYED_OBJECTS.PACKAGE_ID}::bet::BetReceipt`,
         },
         options: {
           showType: true,
           showContent: true,
         },
       });
-      console.log(response.data)
 
-      setRecipt(response.data);
+
+      setReceipts(response.data);
+      
     } catch (error) {
-      console.error("Error fetching recipt:", error);
-      setRecipt([]);
+      console.error("Error fetching receipts:", error);
+      setReceipts([]);
     }
   };
 
-  useEffect(() => {
-    if (account && account?.address) {
-      fetchCoins(account.address);
+  const claimWinning = async (betId: string): Promise<void> => {
+    setBetID(betId)
+
+    try {
+      if (!account) {
+        throw new Error("Wallet not connected");
+      }
+
+      const receipt = findReceiptByBetId(betId);
+      console.log(betId,receipt)
+      if (!receipt) {
+        throw new Error("You have no winning to claim");
+      }
+
+      const transaction = createClaimTransaction(betId, receipt.objectId);
+      await executeClaimTransaction(transaction);
+    } catch (error) {
+      console.error("Error claiming winnings:", error);
     }
-  }, [account]);
+  };
 
-const claimWinning = async (bet_id: string) => {
-  try {
-    if (!account) throw new Error("Wallet not connected");
+  const findReceiptByBetId = (betId: string): BetReceipt | undefined => {
+    return receipts.find((receipt) => {
+      const content = receipt.data?.content;
+      console.log("content",content )
+      return (
+        content?.fields?.bet_service_id === betId &&
+        content?.fields?.choice === betResult &&
+        content?.fields?.claimed === false
+      );
+    })?.data as BetReceipt | undefined;
+  };
 
-    const recipt = recipts.find(
-      (c) => c.data?.content?.fields?.bet_service_id === bet_id
-    );
-    if (!recipt) throw new Error("You have no winning to claim");
-   console.log(recipt.data?.objectId)
-    
-
-    const tx = new Transaction();
-    tx.moveCall({
+  const createClaimTransaction = (
+    betId: string,
+    receiptId: string
+  ): Transaction => {
+    const transaction = new Transaction();
+    transaction.moveCall({
       target: `${DEPLOYED_OBJECTS.PACKAGE_ID}::service::claim_winning`,
-      arguments: [tx.object(bet_id), tx.object(recipt?.data.objectId)],
+      arguments: [transaction.object(betId), transaction.object(receiptId)],
     });
+    return transaction;
+  };
 
- signAndExecute(
-      { transaction: tx },
+  const executeClaimTransaction = async (
+    transaction: Transaction
+  ): Promise<void> => {
+    signAndExecuteTransaction(
+      { transaction },
       {
         onSuccess: async ({ digest }) => {
           const { effects, objectChanges } = await suiClient.waitForTransaction(
@@ -86,14 +142,7 @@ const claimWinning = async (bet_id: string) => {
         },
       }
     );
-  } catch (error) {
-    console.error("Error claiming winnings:", error);
-  }
-};
-
-  return {
-    isSuccess,
-    isPending,
-    claimWinning,
   };
+
+  return { isSuccess, isPending, claimWinning };
 };

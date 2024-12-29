@@ -1,11 +1,8 @@
 import React, { useState } from "react";
 import { useNewBetCreation } from "../hooks/useNewBetCreation";
+import { Match } from "../../types";
 
-interface Match {
-  id: string;
-  home: string;
-  away: string;
-}
+
 
 interface MatchDetailProps {
   match: Match;

@@ -1,11 +1,9 @@
 import { useEffect, useState } from "react";
 import { SuiClient, getFullnodeUrl } from "@mysten/sui/client";
 import { SuiMoveObject } from "@mysten/sui/client";
-import DEPLOYED_OBJECTS from "../../../src/components/constants/deployed_objects.json";
 import { Match } from "../../types";
 
 // Define the structure of a bet
-
 
 // Define the return type of the hook
 interface UseGetBetServicesResult {
@@ -15,7 +13,7 @@ interface UseGetBetServicesResult {
 }
 
 // Define the custom hook
-export const useGetBetServices = (): UseGetBetServicesResult => {
+export const useGetUserBets = (bet_id:[]): UseGetBetServicesResult => {
   const [bets, setBets] = useState<Match[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
@@ -23,15 +21,20 @@ export const useGetBetServices = (): UseGetBetServicesResult => {
   const fetchBets = async () => {
     setIsLoading(true);
     setIsError(false);
-    try {
-      const fetchedBets = await getBets();
-      setBets(fetchedBets);
-    } catch (error) {
-      console.error("Error fetching bets:", error);
-      setIsError(true);
-    } finally {
-      setIsLoading(false);
-    }
+
+    bet_id.map(async(bet)=>{
+        try {
+          const fetchedBets = await getBets(bet);
+          setBets(fetchedBets);
+        } catch (error) {
+          console.error("Error fetching bets:", error);
+          setIsError(true);
+        } finally {
+          setIsLoading(false);
+        }
+    })
+    
+    
   };
 
   useEffect(() => {
@@ -42,12 +45,12 @@ export const useGetBetServices = (): UseGetBetServicesResult => {
 };
 
 // Helper function to fetch bets from the Sui network
-const getBets = async (): Promise<Bet[]> => {
+const getBets = async (betID:string          ): Promise<Bet[]> => {
   const client = new SuiClient({ url: getFullnodeUrl("testnet") });
 
   try {
     const allObjects = await client.getDynamicFields({
-      parentId: DEPLOYED_OBJECTS.BET_MANAGER_ID,
+      parentId: betID,
     });
 
     const betPromises = allObjects.data.map(async (obj) => {

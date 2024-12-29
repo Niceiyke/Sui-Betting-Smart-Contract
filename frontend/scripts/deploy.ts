@@ -1,6 +1,7 @@
 import "dotenv/config"
 import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519"
 import { fromBase64 } from "@mysten/sui/utils"
+import { fromHex } from "@mysten/sui/utils";
 import { SuiClient } from "@mysten/sui/client"
 import { Transaction } from "@mysten/sui/transactions"
 import path, { dirname } from "path"
@@ -33,10 +34,11 @@ console.log(`Deploying from  ${keypair.toSuiAddress()}`)
 
 const deploy_trx = new Transaction();
 const [upgrade_cap] = deploy_trx.publish({ modules, dependencies });
-import { fromHex } from '@mysten/sui/utils';
+
 
 // Convert the address string to a Uint8Array
-const addressBytes = fromHex('385bbbc4e5befaa96d005c0f203d4db40e6aa796c7fa9983be25c89ec878844b');
+const addressBytes = fromHex(process.env.ADDRESS_OWNER);
+console.log("addressBytes IS:",addressBytes)
 
 // Use the `pure` method with the correct type
 const serializedAddress = deploy_trx.pure(addressBytes);

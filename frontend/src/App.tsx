@@ -1,80 +1,89 @@
 import React from "react";
+import { Routes, Route, useParams, useNavigate } from "react-router-dom";
+import Navbar from "./components/navbar/Navbar";
 import CreateMatch from "./components/match/CreateMatch";
 import MatchList from "./components/match/Matchlist";
-import Navbar from "./components/navbar/Navbar";
-import { Routes, Route, useParams, useNavigate } from "react-router-dom";
-import { BackButton } from "./components/helpers/BackButton";
 import MatchDetail from "./components/match/MatchDetail";
+import {BackButton} from "./components/helpers/BackButton";
 import { useGetBetServices } from "./components/hooks/useGetBetServices";
-import ActiveMatchList from "./components/manager/ActiveBets";
+import ResolvedMatchList from "./components/user/ResolvedMatchList";
+import ActiveMatchList from "./components/manager/ActiveMatchList";
+import { Match } from "./types";
 import ActiveMatchDetail from "./components/manager/UpdateBets";
 import ResolvedMatchDetail from "./components/match/ResolvedMatchDetail";
-import ResolvedMatchList from "./components/user/ClaimWinning";
+
+
 
 export default function App() {
-  const { matchList, isLoading } = useGetBetServices(); // Get matches
-
-  const time =Date.now()
-
-
-  const activeMatches = matchList.filter((match) => match.status == "Pending" && Number(match.start_time) > time);
-
-  //change logic to be greater than minutes of match play
-  const updateResultList = matchList.filter(
-    (match) => match.status == "Pending" && Number(match.start_time) < time
-  );
-
-
-
-
-
-  
-  const resolvedMatch =matchList.filter((match)=>match.status=="Resolved")
-
-
-
-
-
-
-
+  const { bets, isLoading } = useGetBetServices();
   const navigate = useNavigate();
+  const currentTime = Date.now();
 
+  // Filter functions
+  const filterActiveMatches = (match: Match) =>
+    match.status === "Pending" && Number(match.startTime) > currentTime;
 
-  // Wrapper to pass data to MatchDetail
-  const MatchDetailWrapper: React.FC = () => {
-    const { id } = useParams(); // Match ID from URL
-    const match = matchList.find((m) => m.id === id); // Find match by ID
+  const filterUpdateResultMatches = (match: Match) =>
+    match.status === "Pending" && Number(match.startTime) < currentTime;
+
+  const filterResolvedMatches = (match: Match) => match.status === "Resolved";
+
+  // Filtered match lists
+  const activeMatches = bets.filter(filterActiveMatches);
+  const updateResultMatches = bets.filter(filterUpdateResultMatches);
+  const resolvedMatches = bets.filter(filterResolvedMatches);
+
+  // Generic match detail component
+  const MatchDetailWrapper: React.FC<{
+    filterFunction: (match: Match) => boolean;
+    backPath: string;
+  }> = ({ filterFunction, backPath }) => {
+    const { id } = useParams();
+    const match = bets.find((m) => m.id === id && filterFunction(m));
 
     if (!match) {
       return <p className="text-red-500 text-center mt-4">Match not found.</p>;
     }
 
-    return <MatchDetail match={match} onBack={() => navigate("/")} />;
-  };
-
-  const UpdateMatchDetailWrapper: React.FC = () => {
-    const { id } = useParams(); // Match ID from URL
-    const match = updateResultList.find((m) => m.id === id); // Find match by ID
-
-    if (!match) {
-      return <p className="text-red-500 text-center mt-4">Match not found.</p>;
+    if (backPath === "/") {
+      return <MatchDetail match={match} onBack={() => navigate(backPath)} />;;
     }
 
-    return <ActiveMatchDetail match={match} onBack={() => navigate("/active")} />;
+    if (backPath === "/active") {
+      return <ActiveMatchDetail match={match} onBack={() => navigate(backPath)} />;
+    }
+
+    if (backPath === "/resolved") {
+      return <ResolvedMatchDetail match={match} onBack={() => navigate(backPath)} />;
+    }
+
+    
   };
+       
+  // Generic list component
+  const MatchListComponent: React.FC<{
+    matchList: Match[];
+    backPath?: string;
+  }> = ({ matchList, backPath = "/" }) => {
+    if (isLoading) {
+      return <p className="text-center mt-4">Loading matches...</p>;
+    }
 
- const ResolvedMatchDetailWrapper: React.FC = () => {
-   const { id } = useParams(); // Match ID from URL
-   const match = resolvedMatch.find((m) => m.id === id); // Find match by ID
+    if (backPath === "/") {
+      return <MatchList matchList={matchList} />;
+    }
 
-   if (!match) {
-     return <p className="text-red-500 text-center mt-4">Match not found.</p>;
-   }
+    if (backPath === "/active") {
+      return <ActiveMatchList matchList={matchList} />;
+    }
 
-   return (
-     <ResolvedMatchDetail match={match} onBack={() => navigate("/resolved")} />
-   );
- };
+    if (backPath === "/resolved") {
+      return <ResolvedMatchList matchList={matchList} />;
+    }
+
+    // If no conditions match, you might want to return something else or nothing
+    return null;
+  };
 
   return (
     <>
@@ -82,50 +91,60 @@ export default function App() {
       <Routes>
         <Route
           path="/"
-          element={
-            isLoading ? (
-              <p className="text-center mt-4">Loading matches...</p>
-            ) : (
-              <MatchList matchList={activeMatches} />
-            )
-          }
+          element={<MatchListComponent matchList={activeMatches} />}
         />
         <Route
           path="/active"
           element={
-            isLoading ? (
-              <p className="text-center mt-4">Loading matches...</p>
-            ) : (
-              <ActiveMatchList matchList={updateResultList} />
-            )
+            <MatchListComponent
+              matchList={updateResultMatches}
+              backPath="/active"
+            />
           }
         />
-        <Route path="/match/:id" element={<MatchDetailWrapper />} />
+        <Route
+          path="/match/:id"
+          element={
+            <MatchDetailWrapper
+              filterFunction={filterActiveMatches}
+              backPath="/"
+            />
+          }
+        />
         <Route
           path="/active/match/:id"
-          element={<UpdateMatchDetailWrapper />}
+          element={
+            <MatchDetailWrapper
+              filterFunction={filterUpdateResultMatches}
+              backPath="/active"
+            />
+          }
         />
         <Route
           path="/resolved"
           element={
-            isLoading ? (
-              <p className="text-center mt-4">Loading matches...</p>
-            ) : (
-              <ResolvedMatchList matchList={resolvedMatch} />
-            )
+            <MatchListComponent
+              matchList={resolvedMatches}
+              backPath="/resolved"
+            />
           }
         />
         <Route
           path="/resolved/match/:id"
-          element={<ResolvedMatchDetailWrapper />}
+          element={
+            <MatchDetailWrapper
+              filterFunction={filterResolvedMatches}
+              backPath="/resolved"
+            />
+          }
         />
         <Route
           path="/create"
           element={
-            <div>
+            <>
               <BackButton />
               <CreateMatch />
-            </div>
+            </>
           }
         />
       </Routes>

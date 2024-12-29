@@ -13,7 +13,7 @@ edition = "2024.beta" # edition = "legacy" to use legacy (pre-2024) Move
 
 # For local dependencies use `local = path`. Path is relative to the package root
 # Local = { local = "../path/to" }
-Sui = {local = "C:/Users/oyomi01/.move/sui/crates/sui-framework/packages/sui-framework"}
+Sui = {local = "/home/niceiyke/.move/https___github_com_MystenLabs_sui_git_framework__testnet/crates/sui-framework/packages/sui-framework"}
 
 # To resolve a version conflict and force a specific version for dependency
 # override use `override = true`

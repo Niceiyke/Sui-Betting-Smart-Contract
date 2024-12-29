@@ -15,6 +15,7 @@ const ActiveMatchList: React.FC<MatchListProps> = ({ matchList }) => {
   const navigate = useNavigate();
 
   const handleNavigate = (id: string) => {
+    console.log(id)
     navigate(`/active/match/${id}`); // Navigate to match detail page
   };
 
